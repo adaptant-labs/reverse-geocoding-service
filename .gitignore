@@ -17,8 +17,4 @@
 # IntelliJ IDE files (Android Studio, GoLand IDE)
 .idea
 
-# Generated SSL certificates
-server.crt
-server.key
-
-payd-gateway-server
+reverse-geocoding-service

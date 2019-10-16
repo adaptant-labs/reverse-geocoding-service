@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/adaptant-labs/geo/georeverse"
 	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	"github.com/oschwald/maxminddb-golang"
 	"github.com/urfave/cli"
 	"log"
 	"net/http"
@@ -12,6 +14,7 @@ import (
 
 var (
 	reverser *georeverse.CountryReverser
+	geodb *maxminddb.Reader
 )
 
 type ConsulConfig struct {
@@ -93,6 +96,11 @@ func main() {
 			return err
 		}
 
+		geodb, err = maxminddb.Open("data/GeoLite2-Country.mmdb")
+		if err != nil {
+			return err
+		}
+
 		if config.consul.enabled == true {
 			err = ConsulServiceRegister(config)
 			if err != nil {
@@ -100,12 +108,17 @@ func main() {
 			}
 		}
 
+		router := mux.NewRouter()
+		router.HandleFunc("/georeverse", georeverseHandler)
+		router.HandleFunc("/georeverse/{ipAddress}", georeverseIPHandler)
+
+		loggedRouter := handlers.LoggingHandler(os.Stdout, router)
+
 		addr := config.host + ":" + strconv.Itoa(config.port)
+
 		log.Printf("Listening on %s/georeverse...", addr)
 
-		http.Handle("/georeverse", handlers.LoggingHandler(os.Stdout, http.HandlerFunc(georeverseHandler)))
-
-		return http.ListenAndServe(addr, nil)
+		return http.ListenAndServe(addr, loggedRouter)
 	}
 
 	err = app.Run(os.Args)

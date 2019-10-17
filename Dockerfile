@@ -5,9 +5,7 @@ ENV GO111MODULE=on
 WORKDIR /go/src
 ADD . /go/src
 
-# No mkdir available in the scratch image, so we need to shoehorn the data file into place in the builder
-RUN mkdir /data
-COPY ./data/polygons.properties /data
+COPY ./data/ /data/
 
 RUN go get -v
 RUN go build -ldflags "-linkmode external -extldflags -static" -a -o /go/bin/app
